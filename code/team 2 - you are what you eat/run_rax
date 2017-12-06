@@ -1,0 +1,9 @@
+#!/bin/bash
+
+RAX_PATH=~/codersco/RaxCore/
+RAX_EXEC=$RAX_PATH/start_rax
+
+POSTGRES_DB_ADDRESS="postgres+odbc://DRIVER=PostgreSQL;Server=;Port=;UID=;Password=;Database="
+
+$RAX_EXEC -u ${POSTGRES_DB_ADDRESS} "$@"
+

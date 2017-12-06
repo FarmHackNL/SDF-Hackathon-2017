@@ -1,0 +1,54 @@
+{[
+    $:animal_number,
+    #:location,
+    #:parity,
+    #:lactation_length,
+    #:total_kgMilk,
+    &:total_kgFat,
+    &:total_kgProtein,
+    &:total_kgMilk_305d,
+    &:total_kgFat_305d,
+    &:total_kgProtein_305d
+]} : lactations := import [
+    ($)"animal_number",
+    (#)"location",
+    (#)"parity",
+    (#)"lactation_length",
+    (#)"total_kgMIlk",
+    (&)"total_kgFat",
+    (&)"total_kgProtein",
+    (&)"total_kgMIlk_305d",
+    (&)"total_kgFat_305d",
+    (&)"total_kgProtein_305d"
+] "lactations";
+
+{[
+    $:animal_number,
+    #:location,
+    $:base,
+    #:reliability,
+    #:bv_kgMilkn
+]} : breedingValues := import [
+    ($)"animal_number",
+    (#)"location",
+    ($)"base",
+    (#)"reliability",
+    (#)"bv_kgMilkn"
+] "breedingvalues";
+
+{[
+    $:animal_number,
+    @:birthday
+]} : birthdays := import [
+    ($)"animal_number",
+    (@)"birthday"
+] "birthdays";
+
+{[$:animal_number, @:t, &:wcorr]} : weight := 
+  import [($)"id", (@)"t", (&)"wcorr"] "gewicht";
+
+{[$:animal_number, @:t, &:soll, &:soll_rm, &:abruf]} : milkintake :=
+  import [($)"id", (@)"t", (&)"soll", (&)"soll_rm", (&)"abruf"] "melkopname";
+
+{[$:animal_number, @:t, #:daytikscounter, #:tiks]} : waterintake :=
+  import [($)"id", (@)"t", (#)"daytikscounter", (#)"tiks"] "wateropname";

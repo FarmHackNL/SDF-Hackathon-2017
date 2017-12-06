@@ -1,0 +1,77 @@
+%include "import.rax";
+%digits 3,2;
+%time on;
+
+//weight := weight \ 10000;
+
+//{[$:animal_number, &:weight]} : avg_weights :=
+//  fold    [.animal_number, .year_day, /max(.wcorr):weight]
+//  project [.animal_number, .t, .t.yyyyddd:year_day, .wcorr]
+//  weight;
+
+{[$:animal_number, &:wd60]} : wd60 :=
+  select [.animal_number != "NL744200894" && .animal_number != "NL929779618"]
+  fold   [.animal_number, /average(.wcorr)]
+  select [.day > 57 && .day < 63]
+  project [.animal_number, (.t ^ .birthday).days:day, .wcorr]
+  weight |><| birthdays;
+
+`materialize wd60;
+
+{[$:animal_number, &:wd120]} : wd120 :=
+  fold   [.animal_number, /average(.wcorr)]
+  select [.day > 117 && .day < 123]
+  project [.animal_number, (.t ^ .birthday).days:day, .wcorr]
+  weight |><| birthdays;
+
+`materialize wd120;
+
+{[$:animal_number, #:mint, #:maxt, #:period]} : min_max_days_milk :=
+  project [.animal_number, (.min ^ .birthday).days, (.max ^ .birthday).days, (.max ^ .min).days:period]
+  fold [.animal_number, .birthday, /min(.t):min, /max(.t):max]
+  select [.soll > 0]
+  milkintake |><| birthdays;
+
+{[$:animal_number, #:non_zero_days]} : num_non_zero_days_milk :=
+  fold [.animal_number, /count!(.#2)]
+  project [.animal_number, .t.yyyyddd]
+  select [.soll > 0]
+  milkintake;
+
+{[$:animal_number]} : selected_cow_nos :=
+  fold [.animal_number]
+  select [.mint < 30 && .maxt > 70]
+  select [.non_zero_days > 40]
+  min_max_days_milk |><| num_non_zero_days_milk;
+
+\milkintake : sel_milkintake := milkintake |><| selected_cow_nos;
+
+{[$:animal_number, &:avg_milkintake]} : avg_milkintake :=
+  fold [.animal_number, /average(.sum_soll)]
+  fold [.animal_number, .day, /sum(.soll):sum_soll]
+  select [.day >= 30 && .day <= 70]
+  project [.animal_number, (.t ^ .birthday).days:day, .soll]
+  select [.soll > 0]
+  milkintake |><| birthdays;
+
+{[$:animal_number, &:wd60, &:wd120, &:avg_milkintake, #:max_milk_day,
+  #:bv_kgMilkn, &:total_kgMilk_305d, &:total_kgFat_305d,
+  &:total_kgProtein_305d]} : cow_features :=
+   project [.animal_number, .wd60, .wd120, .avg_milkintake, .maxt, 
+            .bv_kgMilkn, .total_kgMilk_305d, .total_kgFat_305d,
+						.total_kgProtein_305d]
+   select [.lactation_length > 200]
+   avg_milkintake |><| 
+	 min_max_days_milk |><| 
+	 num_non_zero_days_milk |><| 
+	 selected_cow_nos |><|
+   wd60 |><|
+   wd120 |><|
+   lactations |><|
+   breedingValues;
+
+%sql on;
+`print cow_features;
+`print #cow_features;
+
+<\cow_features : !"cow_features.csv"> := cow_features;
